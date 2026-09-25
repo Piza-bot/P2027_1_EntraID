@@ -17,9 +17,9 @@ Open the URL printed by Vite, normally `http://localhost:5173/`.
 
 1. In the Microsoft Entra admin center, create an app registration for **Accounts in this organizational directory only**.
 2. Under **Authentication**, add these URLs as **Single-page application** redirect URIs:
-	- `http://localhost:5173/` for Vite development.
-	- `http://localhost/` for the local Nginx site.
-	- `https://piza-bot.github.io/P2027_1_EntraID/` for GitHub Pages.
+	- `http://localhost:5173/redirect.html` for Vite development.
+	- `http://localhost/redirect.html` for the local Nginx site.
+	- `https://piza-bot.github.io/P2027_1_EntraID/redirect.html` for GitHub Pages.
 3. Under **API permissions**, add Microsoft Graph **Delegated** permission `User.Read`.
 4. Copy the **Application (client) ID** and **Directory (tenant) ID** from the app overview into `src/authConfig.js`.
 
