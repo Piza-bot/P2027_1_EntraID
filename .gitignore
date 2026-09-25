@@ -1,0 +1,19 @@
+# VS Code
+.vscode/
+
+# Log
+*.log
+
+# Environment Variables
+.env
+.env.*
+
+# Build files
+bin/
+obj/
+
+
+# Windows
+Thumbs.db
+Desktop.ini
+
