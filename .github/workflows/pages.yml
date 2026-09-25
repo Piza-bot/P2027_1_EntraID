@@ -23,12 +23,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+      - name: Install dependencies and build
+        run: npm ci && npm run build
+        env:
+          GITHUB_PAGES: "true"
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

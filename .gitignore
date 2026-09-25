@@ -11,6 +11,8 @@
 # Build files
 bin/
 obj/
+node_modules/
+dist/
 
 
 # Windows

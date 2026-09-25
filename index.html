@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f2">
-  <title>Entra ID | หน้าทดลอง</title>
+  <title>Entra ID | เข้าสู่ระบบ</title>
   <style>
     :root {
       color-scheme: light;
@@ -116,7 +116,6 @@
 
     .test-button {
       min-height: 48px;
-      margin-top: 32px;
       padding: 0 20px;
       border: 0;
       border-radius: 6px;
@@ -129,8 +128,31 @@
       transition: background .18s ease, transform .18s ease;
     }
 
-    .test-button:hover { background: #0c5742; transform: translateY(-1px); }
+    .test-button:hover:not(:disabled) { background: #0c5742; transform: translateY(-1px); }
     .test-button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .test-button:disabled { cursor: not-allowed; opacity: .55; }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+
+    .secondary-button {
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .secondary-button:hover { background: var(--paper); }
+    .secondary-button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+
+    .badge[data-state="signed-in"] { background: var(--mint); color: var(--green); }
+    .badge[data-state="error"] { background: #fbe5e2; color: #8a2f24; }
 
     .status-panel {
       padding: 28px;
@@ -181,7 +203,12 @@
     }
 
     .check-row p { margin: 0; font-size: 13px; font-weight: 650; }
-    .check-row small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .check-row small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+
+    .profile-list { margin: 8px 0 0; }
+    .profile-list div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .profile-list dt { color: var(--muted); font-size: 12px; }
+    .profile-list dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 
     .notice {
       margin: 20px 0 0;
@@ -205,7 +232,8 @@
 
     #result { display: inline-flex; align-items: center; gap: 8px; }
     #result .signal { background: var(--amber); }
-    #result[data-state="passed"] .signal { background: var(--green); }
+    #result[data-state="ready"] .signal, #result[data-state="signed-in"] .signal { background: var(--green); }
+    #result[data-state="error"] .signal { background: #b83b2d; }
 
     @keyframes arrive {
       from { opacity: 0; transform: translateY(10px); }
@@ -229,49 +257,56 @@
   <div class="page">
     <header>
       <div class="brand"><span class="brand-mark" aria-hidden="true">E</span><span>Entra ID</span></div>
-      <div class="env">โหมดทดลอง</div>
+      <div class="env">บัญชีองค์กร</div>
     </header>
 
     <main>
       <section aria-labelledby="page-title">
         <p class="eyebrow">P2027 · Identity workspace</p>
-        <h1 id="page-title">ยืนยันตัวตน<br><span>อย่างมั่นใจ</span></h1>
-        <p class="intro">พื้นที่ทดสอบหน้าเว็บสำหรับโปรเจกต์ Entra ID พร้อมตรวจสอบการแสดงผลและการโต้ตอบเบื้องต้น</p>
-        <button class="test-button" id="test-button" type="button">ทดสอบการทำงาน</button>
+        <h1 id="page-title">ลงชื่อเข้าใช้<br><span>อย่างปลอดภัย</span></h1>
+        <p class="intro">เข้าใช้งานด้วยบัญชีองค์กร Microsoft เพื่อดูข้อมูลโปรไฟล์ของคุณจาก Microsoft Graph</p>
+        <div class="button-row">
+          <button class="test-button" id="sign-in" type="button" disabled>ลงชื่อเข้าใช้ Microsoft</button>
+          <button class="secondary-button" id="sign-out" type="button" hidden>ออกจากระบบ</button>
+        </div>
       </section>
 
-      <aside class="status-panel" aria-label="สถานะระบบทดสอบ">
+      <aside class="status-panel" aria-labelledby="panel-title">
         <div class="panel-heading">
-          <h2>สถานะระบบ</h2>
-          <span class="badge">ยังไม่เชื่อมต่อ</span>
+          <h2 id="panel-title">บัญชี Microsoft</h2>
+          <span class="badge" id="auth-badge" data-state="setup">ตั้งค่าก่อนใช้งาน</span>
         </div>
-        <div class="check-row">
-          <span class="check-icon" aria-hidden="true">✓</span>
-          <div><p>หน้าเว็บพร้อมใช้งาน</p><small>HTML และ CSS โหลดสำเร็จ</small></div>
+        <div id="signed-out-panel">
+          <div class="check-row">
+            <span class="check-icon" aria-hidden="true">1</span>
+            <div><p>Microsoft Entra ID</p><small>ยืนยันตัวตนบัญชีองค์กร</small></div>
+          </div>
+          <div class="check-row">
+            <span class="check-icon" aria-hidden="true">2</span>
+            <div><p>Microsoft Graph</p><small>ขอสิทธิ์ delegated: User.Read</small></div>
+          </div>
+          <p class="notice" id="setup-message" role="status">กำลังตรวจสอบการตั้งค่า...</p>
         </div>
-        <div class="check-row">
-          <span class="check-icon" aria-hidden="true">✓</span>
-          <div><p>รองรับหน้าจอมือถือ</p><small>เลย์เอาต์ปรับตามขนาดหน้าจอ</small></div>
+        <div id="signed-in-panel" hidden>
+          <div class="check-row">
+            <span class="check-icon" aria-hidden="true">✓</span>
+            <div><p id="profile-name">กำลังโหลดโปรไฟล์</p><small id="profile-account"></small></div>
+          </div>
+          <dl class="profile-list">
+            <div><dt>อีเมล</dt><dd id="profile-email">-</dd></div>
+            <div><dt>ตำแหน่ง</dt><dd id="profile-job">-</dd></div>
+          </dl>
+          <p class="notice" id="profile-message" role="status">กำลังเรียก Microsoft Graph...</p>
         </div>
-        <p class="notice">หน้านี้เป็นตัวอย่างสำหรับทดสอบ ยังไม่มีการเชื่อมต่อ Microsoft Entra ID</p>
       </aside>
     </main>
 
     <footer>
       <span>P2027_1_EntraID</span>
-      <span id="result" aria-live="polite"><span class="signal" aria-hidden="true"></span>รอการทดสอบ</span>
+      <span id="result" aria-live="polite"><span class="signal" aria-hidden="true"></span><span id="app-status">กำลังเริ่มต้น</span></span>
     </footer>
   </div>
 
-  <script>
-    const testButton = document.querySelector("#test-button");
-    const result = document.querySelector("#result");
-
-    testButton.addEventListener("click", () => {
-      result.dataset.state = "passed";
-      result.lastChild.textContent = "ทดสอบผ่าน · JavaScript ทำงานแล้ว";
-      testButton.textContent = "ทดสอบอีกครั้ง";
-    });
-  </script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
