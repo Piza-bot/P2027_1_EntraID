@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f2">
+  <title>Entra ID | หน้าทดลอง</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182622;
+      --muted: #65746d;
+      --paper: #f4f6f2;
+      --white: #fff;
+      --green: #126b52;
+      --mint: #d6eee2;
+      --line: #dce4dd;
+      --amber: #edb84d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Aptos", "Segoe UI", sans-serif;
+    }
+
+    .page {
+      width: min(1080px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    header {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--green);
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 21px;
+    }
+
+    .env {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .env::before, .signal {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      content: "";
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+      gap: 72px;
+      align-items: center;
+      min-height: calc(100vh - 136px);
+      padding: 64px 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 20px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 580px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 6vw, 72px);
+      font-weight: 400;
+      line-height: 1.04;
+    }
+
+    h1 span { color: var(--green); }
+
+    .intro {
+      max-width: 490px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .test-button {
+      min-height: 48px;
+      margin-top: 32px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--green);
+      color: white;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+    }
+
+    .test-button:hover { background: #0c5742; transform: translateY(-1px); }
+    .test-button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+
+    .status-panel {
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      box-shadow: 0 18px 45px rgb(24 38 34 / 7%);
+      animation: arrive .55s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-heading h2 { margin: 0; font-size: 16px; }
+
+    .badge {
+      padding: 6px 9px;
+      border-radius: 4px;
+      background: #fff4d9;
+      color: #79520c;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .check-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      flex: 0 0 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--mint);
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .check-row p { margin: 0; font-size: 13px; font-weight: 650; }
+    .check-row small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+
+    .notice {
+      margin: 20px 0 0;
+      padding: 12px 13px;
+      border-left: 3px solid var(--amber);
+      background: #fbf8ef;
+      color: #665735;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    footer {
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    #result { display: inline-flex; align-items: center; gap: 8px; }
+    #result .signal { background: var(--amber); }
+    #result[data-state="passed"] .signal { background: var(--green); }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(100% - 36px, 520px); }
+      main { grid-template-columns: 1fr; gap: 42px; padding: 52px 0; }
+      h1 { font-size: clamp(42px, 12vw, 60px); }
+      .status-panel { padding: 22px; }
+      footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 14px 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">E</span><span>Entra ID</span></div>
+      <div class="env">โหมดทดลอง</div>
+    </header>
+
+    <main>
+      <section aria-labelledby="page-title">
+        <p class="eyebrow">P2027 · Identity workspace</p>
+        <h1 id="page-title">ยืนยันตัวตน<br><span>อย่างมั่นใจ</span></h1>
+        <p class="intro">พื้นที่ทดสอบหน้าเว็บสำหรับโปรเจกต์ Entra ID พร้อมตรวจสอบการแสดงผลและการโต้ตอบเบื้องต้น</p>
+        <button class="test-button" id="test-button" type="button">ทดสอบการทำงาน</button>
+      </section>
+
+      <aside class="status-panel" aria-label="สถานะระบบทดสอบ">
+        <div class="panel-heading">
+          <h2>สถานะระบบ</h2>
+          <span class="badge">ยังไม่เชื่อมต่อ</span>
+        </div>
+        <div class="check-row">
+          <span class="check-icon" aria-hidden="true">✓</span>
+          <div><p>หน้าเว็บพร้อมใช้งาน</p><small>HTML และ CSS โหลดสำเร็จ</small></div>
+        </div>
+        <div class="check-row">
+          <span class="check-icon" aria-hidden="true">✓</span>
+          <div><p>รองรับหน้าจอมือถือ</p><small>เลย์เอาต์ปรับตามขนาดหน้าจอ</small></div>
+        </div>
+        <p class="notice">หน้านี้เป็นตัวอย่างสำหรับทดสอบ ยังไม่มีการเชื่อมต่อ Microsoft Entra ID</p>
+      </aside>
+    </main>
+
+    <footer>
+      <span>P2027_1_EntraID</span>
+      <span id="result" aria-live="polite"><span class="signal" aria-hidden="true"></span>รอการทดสอบ</span>
+    </footer>
+  </div>
+
+  <script>
+    const testButton = document.querySelector("#test-button");
+    const result = document.querySelector("#result");
+
+    testButton.addEventListener("click", () => {
+      result.dataset.state = "passed";
+      result.lastChild.textContent = "ทดสอบผ่าน · JavaScript ทำงานแล้ว";
+      testButton.textContent = "ทดสอบอีกครั้ง";
+    });
+  </script>
+</body>
+</html>
