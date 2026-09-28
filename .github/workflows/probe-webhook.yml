@@ -1,4 +1,4 @@
-name: Probe server HTTP routes
+name: Probe webhook HTTPS route
 on:
   push:
     branches: [main]
@@ -9,10 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Check public HTTP and HTTPS
+      - uses: actions/checkout@v4
+      - name: Check authenticated TLS path
         run: |
-          set +e
-          curl --silent --show-error --connect-timeout 5 --max-time 15 --output /dev/null --write-out 'HTTP status: %{http_code}; remote: %{remote_ip}\n' http://netentra.citcoms.up.ac.th/
-          echo "HTTP curl exit: $?"
-          curl --insecure --silent --show-error --connect-timeout 5 --max-time 15 --output /dev/null --write-out 'HTTPS status: %{http_code}; remote: %{remote_ip}\n' https://netentra.citcoms.up.ac.th/
-          echo "HTTPS curl exit: $?"
+          status=$(curl --silent --show-error --connect-timeout 10 --max-time 20 --cacert .github/p2027-webhook.crt --output /dev/null --write-out '%{http_code}' https://netentra.citcoms.up.ac.th/deploy)
+          echo "Endpoint HTTP status: $status"
+          test "$status" = 404
