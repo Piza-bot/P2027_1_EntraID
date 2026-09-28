@@ -1,0 +1,16 @@
+name: Probe webhook connectivity
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check HTTPS endpoint
+        run: |
+          status=$(curl --insecure --silent --show-error --connect-timeout 10 --max-time 20 --output /dev/null --write-out '%{http_code}' https://netentra.citcoms.up.ac.th:8443/deploy)
+          echo "Endpoint HTTP status: $status"
+          test "$status" = 404
