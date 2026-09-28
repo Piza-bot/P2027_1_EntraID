@@ -1,0 +1,42 @@
+name: Deploy local web server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p2027-local-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify build
+        run: npm ci --no-audit --no-fund && npm run build
+      - name: Signal web server
+        env:
+          DEPLOY_WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+        run: |
+          test -n "$DEPLOY_WEBHOOK_SECRET"
+          timestamp=$(date -u +%s)
+          payload=$(printf '{"repository":"%s","ref":"%s","sha":"%s","timestamp":%s}' \
+            "$GITHUB_REPOSITORY" "$GITHUB_REF" "$GITHUB_SHA" "$timestamp")
+          signature=$(printf '%s' "$payload" | openssl dgst -sha256 -hmac "$DEPLOY_WEBHOOK_SECRET" | sed 's/^.*= //')
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 5 --retry-all-errors \
+            --max-time 180 --cacert .github/p2027-webhook.crt \
+            -H 'Content-Type: application/json' \
+            -H "X-P2027-Signature: sha256=$signature" \
+            --data-binary "$payload" \
+            https://netentra.citcoms.up.ac.th/deploy
