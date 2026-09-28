@@ -1,4 +1,4 @@
-name: Probe server ports
+name: Probe server HTTP routes
 on:
   push:
     branches: [main]
@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Check public ports
+      - name: Check public HTTP and HTTPS
         run: |
           set +e
-          for port in 22 80 443 8443; do
-            timeout 8 bash -c "cat < /dev/null > /dev/tcp/netentra.citcoms.up.ac.th/$port"
-            echo "Port $port exit: $?"
-          done
+          curl --silent --show-error --connect-timeout 5 --max-time 15 --output /dev/null --write-out 'HTTP status: %{http_code}; remote: %{remote_ip}\n' http://netentra.citcoms.up.ac.th/
+          echo "HTTP curl exit: $?"
+          curl --insecure --silent --show-error --connect-timeout 5 --max-time 15 --output /dev/null --write-out 'HTTPS status: %{http_code}; remote: %{remote_ip}\n' https://netentra.citcoms.up.ac.th/
+          echo "HTTPS curl exit: $?"
