@@ -31,4 +31,10 @@ The browser app is a public client. Do not create or add a client secret.
 npm run build
 ```
 
-Vite writes the static site to `dist/`. For Nginx, set the site's document root to `/home/piza/projects/P2027_1_EntraID/dist`, then validate and reload Nginx. GitHub Actions builds and deploys `dist/` to GitHub Pages when changes are pushed to `main`.
+Vite writes the static site to `dist/`. GitHub Actions builds and deploys `dist/` to GitHub Pages when changes are pushed to `main`. The local Nginx site serves the production build at `http://netentra.citcoms.up.ac.th/`.
+
+## Local server deployment
+
+A push to `main` also runs `.github/workflows/deploy.yml`. It verifies the Vite build, signs a webhook request with the GitHub Actions secret `DEPLOY_WEBHOOK_SECRET`, and sends it to `https://netentra.citcoms.up.ac.th/deploy`. Nginx forwards the request to the user service `p2027-webhook.service`. The service checks the HMAC signature, repository, branch, and timestamp, then runs `/home/piza/.local/bin/p2027-sync` to fetch the latest `main`, build it, and publish it in `/var/www/myapp/P2027_1_EntraID`. There is no periodic GitHub polling.
+
+The webhook secret is stored on the server at `/home/piza/.local/state/p2027-webhook-secret` and must never be committed. The workflow pins the endpoint certificate in `.github/p2027-webhook.crt`. When replacing that certificate, update the pinned copy and reload the webhook service and Nginx. To inspect deployments on the server, run `journalctl --user -u p2027-webhook.service`.
