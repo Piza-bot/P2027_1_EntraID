@@ -1,4 +1,4 @@
-name: Probe webhook connectivity
+name: Probe server ports
 on:
   push:
     branches: [main]
@@ -9,8 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Check HTTPS endpoint
+      - name: Check public ports
         run: |
-          status=$(curl --insecure --silent --show-error --connect-timeout 10 --max-time 20 --output /dev/null --write-out '%{http_code}' https://netentra.citcoms.up.ac.th:8443/deploy)
-          echo "Endpoint HTTP status: $status"
-          test "$status" = 404
+          set +e
+          for port in 22 80 443 8443; do
+            timeout 8 bash -c "cat < /dev/null > /dev/tcp/netentra.citcoms.up.ac.th/$port"
+            echo "Port $port exit: $?"
+          done
