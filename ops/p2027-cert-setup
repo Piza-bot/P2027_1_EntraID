@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+set -eu
+
+acme=/home/piza/.local/share/p2027-acme-client/acme.sh
+acme_home=/home/piza/.local/state/p2027-acme
+cert_dir=/home/piza/.local/state/p2027-site
+domain=netentra.citcoms.up.ac.th
+webroot=/var/www/myapp/P2027_1_EntraID
+
+if [ ! -s "$cert_dir/fullchain.pem" ] || [ ! -s "$cert_dir/privkey.pem" ]; then
+  env DEBUG=0 sh "$acme" --issue --server letsencrypt \
+    --home "$acme_home" --config-home "$acme_home" \
+    --domain "$domain" --webroot "$webroot" --keylength ec-256
+fi
+
+env DEBUG=0 sh "$acme" --install-cert --ecc \
+  --home "$acme_home" --config-home "$acme_home" \
+  --domain "$domain" \
+  --key-file "$cert_dir/privkey.pem" \
+  --fullchain-file "$cert_dir/fullchain.pem" \
+  --reloadcmd /home/piza/.local/bin/p2027-cert-reload

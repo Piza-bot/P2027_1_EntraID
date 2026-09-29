@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -eu
+openssl x509 -in /home/piza/.local/state/p2027-site/fullchain.pem -noout -checkend 86400
+sudo -n /usr/sbin/nginx -t
+sudo -n /usr/sbin/nginx -s reload

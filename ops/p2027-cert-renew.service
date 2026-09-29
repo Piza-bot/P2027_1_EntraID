@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew TLS certificate for netentra.citcoms.up.ac.th
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/piza/.local/bin/p2027-cert-renew
+TimeoutStartSec=10min
+UMask=0077

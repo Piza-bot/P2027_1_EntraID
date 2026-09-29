@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -eu
+exec env DEBUG=0 sh /home/piza/.local/share/p2027-acme-client/acme.sh \
+  --cron \
+  --home /home/piza/.local/state/p2027-acme \
+  --config-home /home/piza/.local/state/p2027-acme
