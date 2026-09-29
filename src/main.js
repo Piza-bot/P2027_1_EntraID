@@ -2,7 +2,7 @@ import {
   InteractionRequiredAuthError,
   PublicClientApplication,
 } from "@azure/msal-browser";
-import { isAuthConfigured, loginRequest, msalConfig } from "./authConfig.js";
+import { isAuthConfigured, loginRequest, mailApiRequest, msalConfig } from "./authConfig.js";
 
 const elements = {
   signIn: document.querySelector("#sign-in"),
@@ -16,6 +16,11 @@ const elements = {
   profileAccount: document.querySelector("#profile-account"),
   profileEmail: document.querySelector("#profile-email"),
   profileJob: document.querySelector("#profile-job"),
+  mailForm: document.querySelector("#mail-form"),
+  mailTo: document.querySelector("#mail-to"),
+  mailBody: document.querySelector("#mail-body"),
+  sendMail: document.querySelector("#send-mail"),
+  mailMessage: document.querySelector("#mail-message"),
   appStatus: document.querySelector("#app-status"),
   result: document.querySelector("#result"),
 };
@@ -54,14 +59,61 @@ function showSignedIn(account) {
   elements.profileJob.textContent = "กำลังโหลด...";
 }
 
-async function getAccessToken(account) {
+async function getAccessToken(account, request = loginRequest) {
   try {
-    return await msalInstance.acquireTokenSilent({ ...loginRequest, account });
+    return await msalInstance.acquireTokenSilent({ ...request, account });
   } catch (error) {
     if (!(error instanceof InteractionRequiredAuthError)) throw error;
-    return msalInstance.acquireTokenPopup({ ...loginRequest, account });
+    return msalInstance.acquireTokenPopup({ ...request, account });
   }
 }
+
+elements.mailForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const account = msalInstance.getActiveAccount();
+  if (!account) return;
+
+  elements.sendMail.disabled = true;
+  elements.mailMessage.dataset.state = "pending";
+  elements.mailMessage.textContent = "กำลังส่งอีเมล...";
+  try {
+    const tokenResponse = await getAccessToken(account, mailApiRequest);
+    const response = await fetch("/api/send-mail", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokenResponse.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: elements.mailTo.value,
+        message: elements.mailBody.value,
+      }),
+    });
+    const responseBody = await response.text();
+    let result = null;
+    if (responseBody) {
+      try {
+        result = JSON.parse(responseBody);
+      } catch {
+        if (response.ok) throw new Error(`API ตอบกลับข้อมูลไม่ถูกต้อง (HTTP ${response.status})`);
+        result = { error: responseBody };
+      }
+    }
+    if (!response.ok) {
+      const accountHint = result?.account ? ` บัญชีที่ตรวจพบ: ${result.account}` : "";
+      throw new Error(`${result?.error || `ส่งอีเมลไม่สำเร็จ (HTTP ${response.status})`}${accountHint}`);
+    }
+
+    elements.mailForm.reset();
+    elements.mailMessage.dataset.state = "success";
+    elements.mailMessage.textContent = "ส่งอีเมลเรียบร้อยแล้ว";
+  } catch (error) {
+    elements.mailMessage.dataset.state = "error";
+    elements.mailMessage.textContent = `ส่งอีเมลไม่สำเร็จ: ${describeError(error)}`;
+  } finally {
+    elements.sendMail.disabled = false;
+  }
+});
 
 async function loadGraphProfile(account) {
   elements.profileMessage.textContent = "กำลังอ่านโปรไฟล์จาก Microsoft Graph...";

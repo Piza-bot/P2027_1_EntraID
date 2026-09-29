@@ -1,6 +1,6 @@
 # P2027_1_EntraID
  
-Single-page sign-in app for Microsoft Entra ID. It uses MSAL Browser and the delegated Microsoft Graph `User.Read` permission to show the signed-in user's `/me` profile.
+Sign-in app for Microsoft Entra ID. MSAL Browser reads the signed-in user's profile with delegated Microsoft Graph `User.Read`. A Node.js API validates the signed-in user and sends mail as `Piza@up.ac.th` with Microsoft Graph app-only access, restricted by Exchange Online RBAC for Applications.
 
 ## Local development
 
@@ -8,22 +8,41 @@ Requirements: Node.js 24 and npm.
 
 ```bash
 npm install
+cp .env.example .env
+# Set the values in .env before starting the app.
 npm run dev
 ```
 
 Open the URL printed by Vite, normally `http://localhost:5173/`.
 
-## Entra app registration
+## Entra app registration and Exchange RBAC
 
 1. In the Microsoft Entra admin center, create an app registration for **Accounts in this organizational directory only**.
 2. Under **Authentication**, add these URLs as **Single-page application** redirect URIs:
 	- `http://localhost:5173/redirect.html` for Vite development.
 	- `https://netentra.citcoms.up.ac.th/redirect.html` for the production Nginx site.
 	- `https://piza-bot.github.io/P2027_1_EntraID/redirect.html` for GitHub Pages.
-3. Under **API permissions**, add Microsoft Graph **Delegated** permission `User.Read`.
-4. Copy the **Application (client) ID** and **Directory (tenant) ID** from the app overview into `src/authConfig.js`.
+3. Under **Expose an API**, use `api://<Application (client) ID>` as the Application ID URI and add a delegated scope named `access_as_user`.
+4. Under **API permissions**, add Microsoft Graph **Delegated** permission `User.Read` and your app's delegated `access_as_user` scope. Grant admin consent if required by your tenant.
+5. Set `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, and `ENTRA_CLIENT_SECRET` in `.env`. The client ID and tenant ID must also match `src/authConfig.js`. The client secret is used only by Node.js; never put it in frontend code or `VITE_*` variables.
+6. Set `MAIL_FROM_ADDRESS=Piza@up.ac.th`.
+7. In Exchange Online, assign the Node API's service principal the `Application Mail.Send` role with the Management Scope that includes `Piza@up.ac.th`. Verify it with `Test-ServicePrincipalAuthorization` for that mailbox. Do not also grant this app an unscoped Microsoft Entra **Application** `Mail.Send` permission, because grants are additive and would defeat the intended scope.
 
-The browser app is a public client. Do not create or add a client secret.
+The browser app remains a public client and contains no secret. The secret belongs only to the Node API environment. The Node API checks the delegated `access_as_user` token, tenant, and client before it sends. Any signed-in user in the tenant who can access this app can send mail as `Piza@up.ac.th`; Exchange RBAC limits the mailbox the app can send as, not which signed-in users can call this API.
+
+## Node API hosting
+
+During development, Vite proxies `/api` to Node on port `3000`. In production, serve `dist/` with Nginx and reverse-proxy `/api/` to the Node service on the same origin, preserving the path. For example:
+
+```nginx
+location /api/ {
+	proxy_pass http://127.0.0.1:3000;
+	proxy_set_header Host $host;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+Run the Node service with the required environment values from `.env` (or your process manager's secret store) and expose it only through the HTTPS Nginx site. GitHub Pages can host the static sign-in/profile page, but it cannot host this API; mail sending requires the Node service and a same-origin `/api` route.
 
 ## Build and hosting
 

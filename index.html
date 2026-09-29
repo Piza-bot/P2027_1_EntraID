@@ -210,6 +210,33 @@
     .profile-list dt { color: var(--muted); font-size: 12px; }
     .profile-list dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 
+    .mail-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .mail-form h3 { margin: 0; font-size: 15px; }
+    .mail-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .mail-form input, .mail-form textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      padding: 10px 11px;
+    }
+    .mail-form textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+    .mail-form input:focus-visible, .mail-form textarea:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+    .mail-form .test-button { justify-self: start; }
+    #mail-message { min-height: 18px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    #mail-message[data-state="error"] { color: #8a2f24; }
+    #mail-message[data-state="success"] { color: var(--green); }
+
     .notice {
       margin: 20px 0 0;
       padding: 12px 13px;
@@ -297,6 +324,17 @@
             <div><dt>ตำแหน่ง</dt><dd id="profile-job">-</dd></div>
           </dl>
           <p class="notice" id="profile-message" role="status">กำลังเรียก Microsoft Graph...</p>
+          <form class="mail-form" id="mail-form">
+            <h3>ส่งอีเมล</h3>
+            <label for="mail-to">ผู้รับ
+              <input id="mail-to" name="to" type="email" autocomplete="email" maxlength="254" required>
+            </label>
+            <label for="mail-body">ข้อความ
+              <textarea id="mail-body" name="message" maxlength="10000" required></textarea>
+            </label>
+            <button class="test-button" id="send-mail" type="submit">Send</button>
+            <p id="mail-message" role="status" aria-live="polite"></p>
+          </form>
         </div>
       </aside>
     </main>

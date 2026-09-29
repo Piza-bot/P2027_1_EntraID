@@ -1,0 +1,45 @@
+# Working Memory
+
+## วัตถุประสงค์
+SPA สำหรับ sign-in ด้วย Microsoft Entra ID, อ่านโปรไฟล์ Microsoft Graph และส่งอีเมลผ่าน Node.js API ในฐานะ `Piza@up.ac.th`.
+
+## สถานะปัจจุบัน
+- Frontend ใช้ MSAL Browser; delegated scopes คือ Microsoft Graph `User.Read` และ API ของแอป `access_as_user`.
+- Node API อยู่ใน `server/index.js`; ใช้ Express, MSAL Node client credentials และ Microsoft Graph `sendMail`.
+- API ตรวจลายเซ็น token, tenant, audience, client ID และ scope; รองรับ Entra access token v1/v2.
+- ไม่มี `API_ALLOWED_USERS` แล้ว: ผู้ใช้ใดก็ตามใน tenant ที่ sign in และเรียก API ด้วย scope ที่ได้รับ consent สามารถส่งได้.
+- Vite proxy ส่ง `/api` ไป Node ที่ port `3000`; `npm run dev` เปิด Node และ Vite. ถ้า port `5173` ถูกใช้ Vite เลือก `5174`.
+- Local Nginx ที่ `http://localhost/` เคยตั้งให้ชี้ `/home/piza/projects/P2027_1_EntraID/dist`; production ต้อง proxy `/api/` ไป Node service ด้วย.
+- GitHub Pages: `https://piza-bot.github.io/P2027_1_EntraID/` ให้บริการ static frontend เท่านั้น; ส่งเมลไม่ได้หากไม่มี API backend ที่ frontend เข้าถึงได้.
+
+## สิ่งที่ทำเสร็จแล้ว
+- Sign-in/sign-out และแสดงชื่อ, อีเมล/UPN, ตำแหน่งจาก Graph `/me`.
+- ฟอร์มส่งอีเมลมีช่องผู้รับ, ข้อความ และปุ่ม Send; frontend ขอ access token สำหรับ `api://<client-id>/access_as_user`.
+- Node ยืนยัน delegated token แล้วขอ app-only Graph token จาก Entra โดยใช้ secret ที่ server environment ก่อนเรียก `/users/{MAIL_FROM_ADDRESS}/sendMail`.
+- `.env.example` มีเฉพาะชื่อตัวแปรที่จำเป็น; `.env` ถูก ignore โดย Git. ห้าม bundle หรือ commit client secret.
+- Exchange Online RBAC for Applications ใช้ `Application Mail.Send` กับ Management Scope เพื่อจำกัด mailbox ที่ app ส่งแทนได้. ห้ามให้ Entra `Mail.Send` แบบ unscoped เพิ่ม เพราะ grant เป็น additive.
+- Build ผ่านหลังถอด allowlist; smoke test ยืนยันว่า API ที่ไม่มี token ยังตอบ `401`.
+
+## สิ่งที่ต้องทำต่อ
+- ตั้งค่า `.env` บนเครื่อง/API host ด้วย `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, `MAIL_FROM_ADDRESS`; ห้ามบันทึกค่าจริงไว้ในไฟล์นี้.
+- หากยังไม่ได้ทำ ให้ rotate/revoke client secret ที่เคยถูกเปิดเผยในบทสนทนา แล้วอัปเดต secret ใหม่ใน server environment.
+- ตรวจ App Registration: Application ID URI `api://<client-id>`, delegated scope `access_as_user` enabled และ consented; SPA redirect URI ต้องตรงกับ URL ที่ใช้.
+- ตรวจ Exchange RBAC ว่าผูกกับ service principal ของ `ENTRA_CLIENT_ID`, scope ครอบคลุม `Piza@up.ac.th`, และยืนยันด้วย `Test-ServicePrincipalAuthorization`.
+- ทดสอบ sign-in และส่งอีเมลจริงผ่าน Node API บน HTTPS/Nginx; การทดสอบที่ทำในเครื่องยังไม่ได้ยืนยันการส่งเมล end-to-end.
+- ผู้ใช้ทุกคนใน tenant ที่เข้าถึงแอปได้สามารถส่ง arbitrary recipient/content จาก mailbox ที่ scope อนุญาต; RBAC จำกัด mailbox ไม่ได้จำกัด caller.
+
+## Entra และ Hosting
+- App Registration เป็น single-tenant. `src/authConfig.js` มี public tenant/client IDs และขอ `User.Read` กับ `api://<client-id>/access_as_user`.
+- MSAL Browser v5 popup ใช้ `redirect.html` ที่เรียก `broadcastResponseToMainFrame()`; อย่าใช้ root page เป็น redirect.
+- Redirect URIs สำหรับ platform **Single-page application**:
+  - `http://localhost:5173/redirect.html`
+  - `http://localhost/redirect.html`
+  - `https://piza-bot.github.io/P2027_1_EntraID/redirect.html`
+- Node API ต้องรันด้วย secret ใน process environment/secret store และเปิดผ่าน HTTPS reverse proxy. GitHub Pages ไม่สามารถ host Node API.
+- GitHub Pages build ใช้ `GITHUB_PAGES=true` และ base `/P2027_1_EntraID/`; local/Nginx ใช้ base `/`.
+- Nginx ต้อง serve `dist/` และ reverse proxy `/api/` ไป `http://127.0.0.1:3000` โดยคง path.
+
+## ตรวจสอบ
+- `node --check server/index.js && npm run build`
+- `npm ci && npm run build` สำหรับ clean install/build.
+- ทดสอบ API unauthenticated ด้วย `curl` ควรได้ `401`; การส่งจริงต้อง sign in และมี consent/Exchange RBAC ครบ.
