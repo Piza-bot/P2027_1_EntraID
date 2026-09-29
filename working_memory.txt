@@ -9,13 +9,17 @@ SPA สำหรับ sign-in ด้วย Microsoft Entra ID, อ่านโ�
 - Node API อยู่ใน `server/index.js`; ใช้ Express, MSAL Node client credentials และ Microsoft Graph `sendMail`.
 - API ตรวจลายเซ็น token, tenant, audience, client ID และ scope; รองรับ Entra access token v1/v2.
 - ไม่มี `API_ALLOWED_USERS` แล้ว: ผู้ใช้ใดก็ตามใน tenant ที่ sign in และเรียก API ด้วย scope ที่ได้รับ consent สามารถส่งได้.
-- Vite proxy ส่ง `/api` ไป Node ที่ port `3000`; `npm run dev` เปิด Node และ Vite. ถ้า port `5173` ถูกใช้ Vite เลือก `5174`.
+- Vite proxy ส่ง `/api` ไป Node ที่ port `3000`; มี dev server หลายตัวใน workspace โดย Vite ใช้ `5173`, `5174` หรือ `5175` ตาม port ที่ว่าง.
 - Local Nginx ที่ `http://localhost/` เคยตั้งให้ชี้ `/home/piza/projects/P2027_1_EntraID/dist`; production ต้อง proxy `/api/` ไป Node service ด้วย.
 - GitHub Pages: `https://piza-bot.github.io/P2027_1_EntraID/` ให้บริการ static frontend เท่านั้น; ส่งเมลไม่ได้หากไม่มี API backend ที่ frontend เข้าถึงได้.
+- Commit `255877b` deploy workflows สำเร็จทั้ง local static site และ GitHub Pages; workflow webhook build/publish `dist/` ไม่ได้ยืนยันการ restart Node API production.
+- Node PID `19447` ใน workspace เริ่มก่อนโค้ด Subject ล่าสุด; หยุด process เก่าและเริ่ม `node --env-file-if-exists=.env server/index.js` ใหม่บน port `3000`. Smoke test แบบไม่มี token ได้ `401`.
+- ตรวจ production API จาก workspace ไม่สำเร็จ: SSH ไป `netentra.citcoms.up.ac.th:22` timeout และ repo ไม่มี Node API service unit. อย่าสรุปว่า API production ถูก restart แล้ว.
 
 ## สิ่งที่ทำเสร็จแล้ว
 - Sign-in/sign-out และแสดงชื่อ, อีเมล/UPN, ตำแหน่งจาก Graph `/me`.
-- ฟอร์มส่งอีเมลมีช่องผู้รับ, ข้อความ และปุ่ม Send; frontend ขอ access token สำหรับ `api://<client-id>/access_as_user`.
+- หลัง sign-in มีเมนู Home, Dashboard, ทดสอบระบบ dropdown, Contact; ฟอร์มส่งอีเมลแยกเป็น view และมีผู้รับ, เรื่อง, รายละเอียด.
+- Frontend ส่ง `to`, `subject`, `message`; Node validate subject และใส่ค่าใน Graph `message.subject`.
 - ฟอร์มส่ง `to`, `subject`, `message` ไปยัง API; Graph email ใช้ subject และ body แบบ text.
 - Node ยืนยัน delegated token แล้วขอ app-only Graph token จาก Entra โดยใช้ secret ที่ server environment ก่อนเรียก `/users/{MAIL_FROM_ADDRESS}/sendMail`.
 - `.env.example` มีเฉพาะชื่อตัวแปรที่จำเป็น; `.env` ถูก ignore โดย Git. ห้าม bundle หรือ commit client secret.
@@ -27,7 +31,8 @@ SPA สำหรับ sign-in ด้วย Microsoft Entra ID, อ่านโ�
 - หากยังไม่ได้ทำ ให้ rotate/revoke client secret ที่เคยถูกเปิดเผยในบทสนทนา แล้วอัปเดต secret ใหม่ใน server environment.
 - ตรวจ App Registration: Application ID URI `api://<client-id>`, delegated scope `access_as_user` enabled และ consented; SPA redirect URI ต้องตรงกับ URL ที่ใช้.
 - ตรวจ Exchange RBAC ว่าผูกกับ service principal ของ `ENTRA_CLIENT_ID`, scope ครอบคลุม `Piza@up.ac.th`, และยืนยันด้วย `Test-ServicePrincipalAuthorization`.
-- ทดสอบ sign-in และส่งอีเมลจริงผ่าน Node API บน HTTPS/Nginx; การทดสอบที่ทำในเครื่องยังไม่ได้ยืนยันการส่งเมล end-to-end.
+- ส่งอีเมลจริงจาก UI ได้ แต่ภาพอีเมลล่าสุดที่ Subject ว่างถูกส่งก่อน deploy/restart โค้ด Subject; ต้องทดสอบส่งฉบับใหม่หลัง restart API.
+- หากส่งจาก `https://netentra.citcoms.up.ac.th/` แล้วยังไม่มี Subject ให้ตรวจ/restart Node API บน production host แยกจาก static frontend; workflow ปัจจุบันไม่ restart Node.
 - ผู้ใช้ทุกคนใน tenant ที่เข้าถึงแอปได้สามารถส่ง arbitrary recipient/content จาก mailbox ที่ scope อนุญาต; RBAC จำกัด mailbox ไม่ได้จำกัด caller.
 
 ## Entra และ Hosting
@@ -45,3 +50,4 @@ SPA สำหรับ sign-in ด้วย Microsoft Entra ID, อ่านโ�
 - `node --check server/index.js && npm run build`
 - `npm ci && npm run build` สำหรับ clean install/build.
 - ทดสอบ API unauthenticated ด้วย `curl` ควรได้ `401`; การส่งจริงต้อง sign in และมี consent/Exchange RBAC ครบ.
+- ทดสอบ Subject end-to-end โดยส่งเมลใหม่จาก `http://localhost:5175/`; production ต้องทดสอบแยกหลังยืนยัน API process ที่ `netentra` โหลด source ล่าสุด.
