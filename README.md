@@ -1,6 +1,6 @@
 # P2027_1_EntraID
  
-Sign-in app for Microsoft Entra ID. MSAL Browser reads the signed-in user's profile with delegated Microsoft Graph `User.Read`. A Node.js API validates the signed-in user and sends mail as `Piza@up.ac.th` with Microsoft Graph app-only access, restricted by Exchange Online RBAC for Applications.
+Sign-in app for Microsoft Entra ID. MSAL Browser reads the signed-in user's profile with delegated Microsoft Graph `User.Read`. After sign-in, the app provides Home, Dashboard, system tests, and contact navigation. The email test form collects recipient, subject, and message. A Node.js API validates the signed-in user and sends mail as `Piza@up.ac.th` with Microsoft Graph app-only access, restricted by Exchange Online RBAC for Applications.
 
 ## Local development
 

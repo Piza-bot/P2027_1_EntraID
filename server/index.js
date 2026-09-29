@@ -81,9 +81,13 @@ async function authenticateUser(request, response, next) {
 }
 
 app.post("/api/send-mail", authenticateUser, async (request, response) => {
-  const { to, message } = request.body || {};
+  const { to, subject, message } = request.body || {};
   if (typeof to !== "string" || to.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     response.status(400).json({ error: "กรุณาระบุอีเมลผู้รับให้ถูกต้อง" });
+    return;
+  }
+  if (typeof subject !== "string" || !subject.trim() || subject.length > 255) {
+    response.status(400).json({ error: "กรุณาระบุเรื่องอีเมลไม่เกิน 255 ตัวอักษร" });
     return;
   }
   if (typeof message !== "string" || !message.trim() || message.length > 10000) {
@@ -108,6 +112,7 @@ app.post("/api/send-mail", authenticateUser, async (request, response) => {
         body: JSON.stringify({
           message: {
             body: { contentType: "Text", content: message },
+            subject,
             toRecipients: [{ emailAddress: { address: to } }],
           },
           saveToSentItems: true,

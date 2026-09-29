@@ -7,10 +7,15 @@ import { isAuthConfigured, loginRequest, mailApiRequest, msalConfig } from "./au
 const elements = {
   signIn: document.querySelector("#sign-in"),
   signOut: document.querySelector("#sign-out"),
+  nav: document.querySelector("#app-nav"),
+  testsToggle: document.querySelector("#tests-toggle"),
+  testsMenu: document.querySelector("#tests-menu"),
   authBadge: document.querySelector("#auth-badge"),
+  signedOutLayout: document.querySelector("#signed-out-layout"),
   signedOutPanel: document.querySelector("#signed-out-panel"),
   signedInPanel: document.querySelector("#signed-in-panel"),
   setupMessage: document.querySelector("#setup-message"),
+  mailSubject: document.querySelector("#mail-subject"),
   profileMessage: document.querySelector("#profile-message"),
   profileName: document.querySelector("#profile-name"),
   profileAccount: document.querySelector("#profile-account"),
@@ -37,20 +42,27 @@ function describeError(error) {
 }
 
 function showSignedOut(message, isError = false) {
+  elements.signedOutLayout.hidden = false;
   elements.signedOutPanel.hidden = false;
   elements.signedInPanel.hidden = true;
+  elements.nav.hidden = true;
   elements.signIn.hidden = false;
   elements.signOut.hidden = true;
+  elements.testsMenu.hidden = true;
+  elements.testsToggle.setAttribute("aria-expanded", "false");
   elements.authBadge.textContent = isError ? "เชื่อมต่อไม่สำเร็จ" : "ยังไม่ลงชื่อเข้าใช้";
   elements.authBadge.dataset.state = isError ? "error" : "setup";
   if (message) elements.setupMessage.textContent = message;
 }
 
 function showSignedIn(account) {
+  elements.signedOutLayout.hidden = true;
   elements.signedOutPanel.hidden = true;
   elements.signedInPanel.hidden = false;
+  elements.nav.hidden = false;
   elements.signIn.hidden = true;
   elements.signOut.hidden = false;
+  setActiveView("home");
   elements.authBadge.textContent = "ลงชื่อเข้าใช้แล้ว";
   elements.authBadge.dataset.state = "signed-in";
   elements.profileName.textContent = account.name || "บัญชีองค์กร";
@@ -58,6 +70,48 @@ function showSignedIn(account) {
   elements.profileEmail.textContent = "กำลังโหลด...";
   elements.profileJob.textContent = "กำลังโหลด...";
 }
+
+function setActiveView(viewName) {
+  document.querySelectorAll(".workspace-view").forEach((view) => {
+    view.hidden = view.id !== `${viewName}-view`;
+  });
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    if (button.dataset.view === viewName) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  elements.appStatus.textContent = viewName === "home" ? "หน้าแรก" : "พร้อมใช้งาน";
+  elements.result.dataset.state = "signed-in";
+}
+
+elements.nav.addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-view]");
+  if (viewButton) {
+    setActiveView(viewButton.dataset.view);
+    elements.testsMenu.hidden = true;
+    elements.testsToggle.setAttribute("aria-expanded", "false");
+  }
+});
+
+elements.testsToggle.addEventListener("click", () => {
+  const isExpanded = elements.testsToggle.getAttribute("aria-expanded") === "true";
+  elements.testsToggle.setAttribute("aria-expanded", String(!isExpanded));
+  elements.testsMenu.hidden = isExpanded;
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".nav-dropdown")) {
+    elements.testsMenu.hidden = true;
+    elements.testsToggle.setAttribute("aria-expanded", "false");
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    elements.testsMenu.hidden = true;
+    elements.testsToggle.setAttribute("aria-expanded", "false");
+    elements.testsToggle.focus();
+  }
+});
 
 async function getAccessToken(account, request = loginRequest) {
   try {
@@ -86,6 +140,7 @@ elements.mailForm.addEventListener("submit", async (event) => {
       },
       body: JSON.stringify({
         to: elements.mailTo.value,
+        subject: elements.mailSubject.value,
         message: elements.mailBody.value,
       }),
     });

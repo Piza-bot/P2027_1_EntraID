@@ -33,11 +33,12 @@
       margin: 0 auto;
     }
 
-    header {
-      height: 76px;
+    .site-header {
+      min-height: 76px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 22px;
       border-bottom: 1px solid var(--line);
     }
 
@@ -76,6 +77,47 @@
       background: var(--amber);
       content: "";
     }
+
+    .app-nav, .header-actions, .nav-dropdown { display: flex; align-items: center; }
+    .app-nav { gap: 4px; margin-left: auto; }
+    .header-actions { gap: 14px; }
+    .nav-link, .nav-toggle {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .nav-link:hover, .nav-toggle:hover, .nav-link[aria-current="page"], .nav-toggle[aria-expanded="true"] {
+      background: var(--mint);
+      color: var(--green);
+    }
+    .nav-link:focus-visible, .nav-toggle:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+    .nav-dropdown { position: relative; }
+    .nav-caret { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+    .submenu {
+      position: absolute;
+      z-index: 5;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 170px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--white);
+      box-shadow: 0 12px 30px rgb(24 38 34 / 12%);
+    }
+    .submenu .nav-link { width: 100%; justify-content: flex-start; }
 
     main {
       display: grid;
@@ -210,15 +252,54 @@
     .profile-list dt { color: var(--muted); font-size: 12px; }
     .profile-list dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 
-    .mail-form {
-      display: grid;
-      gap: 12px;
-      margin-top: 22px;
-      padding-top: 20px;
-      border-top: 1px solid var(--line);
+    .workspace {
+      display: block;
+      min-height: calc(100vh - 136px);
+      padding: 48px 0 72px;
     }
 
-    .mail-form h3 { margin: 0; font-size: 15px; }
+    .workspace-view { animation: arrive .3s ease both; }
+    .content-title {
+      max-width: 760px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 5vw, 56px);
+      font-weight: 400;
+      line-height: 1.08;
+    }
+    .section-intro { max-width: 700px; margin: 14px 0 0; color: var(--muted); font-size: 15px; line-height: 1.75; }
+    .home-profile { max-width: 680px; margin-top: 38px; }
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(320px, 1.1fr);
+      align-items: center;
+      gap: 56px;
+      padding-top: 18px;
+    }
+    .dashboard-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 7px;
+      object-fit: cover;
+      background: var(--mint);
+    }
+    .mail-heading { padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+    .mail-heading h1 { max-width: 860px; font-size: clamp(32px, 4.2vw, 48px); }
+    .mail-byline { display: grid; gap: 5px; margin: 13px 0 0; color: var(--muted); font-size: 14px; }
+    .mail-byline strong { color: var(--green); font-weight: 700; }
+    .mail-form {
+      display: grid;
+      gap: 16px;
+      max-width: 760px;
+      margin-top: 28px;
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      box-shadow: 0 12px 32px rgb(24 38 34 / 6%);
+    }
+
     .mail-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
     .mail-form input, .mail-form textarea {
       width: 100%;
@@ -230,7 +311,7 @@
       font-size: 14px;
       padding: 10px 11px;
     }
-    .mail-form textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+    .mail-form textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
     .mail-form input:focus-visible, .mail-form textarea:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
     .mail-form .test-button { justify-self: start; }
     #mail-message { min-height: 18px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
@@ -272,6 +353,15 @@
       main { grid-template-columns: 1fr; gap: 42px; padding: 52px 0; }
       h1 { font-size: clamp(42px, 12vw, 60px); }
       .status-panel { padding: 22px; }
+      .site-header { flex-wrap: wrap; gap: 12px; padding: 14px 0; }
+      .app-nav { order: 3; flex: 1 0 100%; flex-wrap: wrap; margin: 0; }
+      .header-actions { margin-left: auto; }
+      .header-actions .env { display: none; }
+      .submenu { left: auto; right: 0; }
+      .workspace { min-height: auto; padding: 42px 0 56px; }
+      .dashboard-layout { grid-template-columns: 1fr; gap: 28px; padding-top: 0; }
+      .dashboard-image { aspect-ratio: 16 / 10; }
+      .mail-form { padding: 20px; }
       footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 14px 0; }
     }
 
@@ -282,19 +372,35 @@
 </head>
 <body>
   <div class="page">
-    <header>
+    <header class="site-header">
       <div class="brand"><span class="brand-mark" aria-hidden="true">E</span><span>Entra ID</span></div>
-      <div class="env">บัญชีองค์กร</div>
+      <nav class="app-nav" id="app-nav" aria-label="เมนูหลัก" hidden>
+        <button class="nav-link" type="button" data-view="home" aria-current="page">Home</button>
+        <button class="nav-link" type="button" data-view="dashboard">Dashboard</button>
+        <div class="nav-dropdown">
+          <button class="nav-toggle" id="tests-toggle" type="button" aria-expanded="false" aria-controls="tests-menu">
+            ทดสอบระบบ <span class="nav-caret" aria-hidden="true"></span>
+          </button>
+          <div class="submenu" id="tests-menu" role="group" aria-label="เมนูทดสอบระบบ" hidden>
+            <button class="nav-link" type="button" data-view="send-mail">ส่งอีเมล</button>
+            <button class="nav-link" type="button" data-view="other">อื่นๆ</button>
+          </div>
+        </div>
+        <button class="nav-link" type="button" data-view="contact">ติดต่อเรา</button>
+      </nav>
+      <div class="header-actions">
+        <div class="env">บัญชีองค์กร</div>
+        <button class="secondary-button" id="sign-out" type="button" hidden>ออกจากระบบ</button>
+      </div>
     </header>
 
-    <main>
+    <main class="signed-out-layout" id="signed-out-layout">
       <section aria-labelledby="page-title">
         <p class="eyebrow">P2027 · Identity workspace</p>
         <h1 id="page-title">ลงชื่อเข้าใช้<br><span>อย่างปลอดภัย</span></h1>
         <p class="intro">เข้าใช้งานด้วยบัญชีองค์กร Microsoft เพื่อดูข้อมูลโปรไฟล์ของคุณจาก Microsoft Graph</p>
         <div class="button-row">
           <button class="test-button" id="sign-in" type="button" disabled>ลงชื่อเข้าใช้ Microsoft</button>
-          <button class="secondary-button" id="sign-out" type="button" hidden>ออกจากระบบ</button>
         </div>
       </section>
 
@@ -314,29 +420,68 @@
           </div>
           <p class="notice" id="setup-message" role="status">กำลังตรวจสอบการตั้งค่า...</p>
         </div>
-        <div id="signed-in-panel" hidden>
+      </aside>
+    </main>
+
+    <main class="workspace" id="signed-in-panel" hidden>
+      <section class="workspace-view" id="home-view" aria-labelledby="home-title">
+        <p class="eyebrow">P2027 · Identity workspace</p>
+        <h1 class="content-title" id="home-title">ยินดีต้อนรับ <span id="profile-name">บัญชีองค์กร</span></h1>
+        <p class="section-intro">เข้าสู่ระบบด้วย Microsoft Entra ID แล้ว</p>
+        <div class="home-profile">
           <div class="check-row">
             <span class="check-icon" aria-hidden="true">✓</span>
-            <div><p id="profile-name">กำลังโหลดโปรไฟล์</p><small id="profile-account"></small></div>
+            <div><p>บัญชีที่ลงชื่อเข้าใช้</p><small id="profile-account"></small></div>
           </div>
           <dl class="profile-list">
             <div><dt>อีเมล</dt><dd id="profile-email">-</dd></div>
             <div><dt>ตำแหน่ง</dt><dd id="profile-job">-</dd></div>
           </dl>
           <p class="notice" id="profile-message" role="status">กำลังเรียก Microsoft Graph...</p>
-          <form class="mail-form" id="mail-form">
-            <h3>ส่งอีเมล</h3>
-            <label for="mail-to">ผู้รับ
-              <input id="mail-to" name="to" type="email" autocomplete="email" maxlength="254" required>
-            </label>
-            <label for="mail-body">ข้อความ
-              <textarea id="mail-body" name="message" maxlength="10000" required></textarea>
-            </label>
-            <button class="test-button" id="send-mail" type="submit">Send</button>
-            <p id="mail-message" role="status" aria-live="polite"></p>
-          </form>
         </div>
-      </aside>
+      </section>
+
+      <section class="workspace-view dashboard-layout" id="dashboard-view" aria-labelledby="dashboard-title" hidden>
+        <div>
+          <p class="eyebrow">P2027 · Dashboard</p>
+          <h1 class="content-title" id="dashboard-title">Under Construction</h1>
+          <p class="section-intro">หน้านี้กำลังอยู่ระหว่างพัฒนา</p>
+        </div>
+        <img class="dashboard-image" src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="ทีมงานกำลังทำงานก่อสร้าง" loading="lazy">
+      </section>
+
+      <section class="workspace-view" id="send-mail-view" aria-labelledby="mail-title" hidden>
+        <div class="mail-heading">
+          <p class="eyebrow">ทดสอบระบบ · ส่งอีเมล</p>
+          <h1 class="content-title" id="mail-title">Exchange Online RBAC for Applications</h1>
+          <p class="mail-byline"><strong>ไม่สนใจ MFA</strong><span>by Piza</span></p>
+        </div>
+        <form class="mail-form" id="mail-form">
+          <label for="mail-to">ชื่อผู้รับ (อีเมล)
+            <input id="mail-to" name="to" type="email" autocomplete="email" maxlength="254" required>
+          </label>
+          <label for="mail-subject">เรื่อง
+            <input id="mail-subject" name="subject" type="text" maxlength="255" required>
+          </label>
+          <label for="mail-body">รายละเอียด
+            <textarea id="mail-body" name="message" maxlength="10000" required></textarea>
+          </label>
+          <button class="test-button" id="send-mail" type="submit">ส่งอีเมล</button>
+          <p id="mail-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="workspace-view" id="other-view" aria-labelledby="other-title" hidden>
+        <p class="eyebrow">ทดสอบระบบ</p>
+        <h1 class="content-title" id="other-title">อื่นๆ</h1>
+        <p class="section-intro">อยู่ระหว่างเตรียมรายการทดสอบเพิ่มเติม</p>
+      </section>
+
+      <section class="workspace-view" id="contact-view" aria-labelledby="contact-title" hidden>
+        <p class="eyebrow">P2027 · Contact</p>
+        <h1 class="content-title" id="contact-title">ติดต่อเรา</h1>
+        <p class="section-intro"><a href="mailto:Admintest@up.ac.th">Admintest@up.ac.th</a></p>
+      </section>
     </main>
 
     <footer>
