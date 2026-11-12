@@ -22,6 +22,10 @@ export const loginRequest = {
   scopes: ["User.Read"],
 };
 
+export const driveMetricRequest = {
+  scopes: ["Files.Read"],
+};
+
 export const mailApiRequest = {
   scopes: [`api://${clientId}/access_as_user`],
 };

@@ -318,6 +318,49 @@
     #mail-message[data-state="error"] { color: #8a2f24; }
     #mail-message[data-state="success"] { color: var(--green); }
 
+    .metric-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 26px; }
+    .metric-toolbar .test-button { min-height: 42px; }
+    .metric-form { max-width: 760px; }
+    .metric-form input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      padding: 10px 11px;
+    }
+    .metric-form input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+    .metric-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+    .metric-card { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+    .metric-card h2 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .metric-card p { margin: 12px 0 0; font-size: clamp(20px, 3vw, 28px); font-weight: 700; overflow-wrap: anywhere; }
+    .metric-card small { color: var(--muted); font-size: 12px; }
+    .metric-message { min-height: 20px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .metric-message[data-state="error"] { color: #8a2f24; }
+    .metric-message[data-state="success"] { color: var(--green); }
+    .metric-meta { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .metric-chart { margin-top: 24px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+    .metric-chart-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 18px; }
+    .metric-chart-heading h2 { margin: 0; font-size: 17px; }
+    .metric-chart-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+    .quota-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; }
+    .quota-total-label { color: var(--muted); font-size: 13px; }
+    .quota-total-value { color: var(--ink); font-size: clamp(24px, 4vw, 36px); font-weight: 750; letter-spacing: -.5px; }
+    .quota-percent { color: var(--muted); font-size: 15px; white-space: nowrap; }
+    .quota-track { display: flex; overflow: hidden; height: 18px; margin-top: 18px; border-radius: 999px; background: #e9eef2; }
+    .quota-used { background: #3974dc; transition: width .25s ease; }
+    .quota-remaining { background: #dce5ef; transition: width .25s ease; }
+    .quota-legend { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .quota-legend span { display: inline-flex; align-items: center; gap: 8px; }
+    .quota-legend i { width: 10px; height: 10px; border-radius: 3px; background: #3974dc; }
+    .quota-legend .remaining-key { background: #dce5ef; }
+    .quota-legend .deleted-key { background: #c89b48; }
+    .quota-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .quota-chart-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; margin-top: 12px; }
+    .quota-chart-footer .quota-note { margin: 0; }
+    .storage-metrics-link { display: inline-block; color: var(--green); font-size: 13px; font-weight: 650; }
     .notice {
       margin: 20px 0 0;
       padding: 12px 13px;
@@ -362,6 +405,9 @@
       .dashboard-layout { grid-template-columns: 1fr; gap: 28px; padding-top: 0; }
       .dashboard-image { aspect-ratio: 16 / 10; }
       .mail-form { padding: 20px; }
+      .metric-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric-card { padding: 16px; }
+      .metric-chart { padding: 18px; }
       footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 14px 0; }
     }
 
@@ -383,6 +429,8 @@
           </button>
           <div class="submenu" id="tests-menu" role="group" aria-label="เมนูทดสอบระบบ" hidden>
             <button class="nav-link" type="button" data-view="send-mail">ส่งอีเมล</button>
+            <button class="nav-link" type="button" data-view="my-onedrive-metric">MyOneDrive Metric</button>
+            <button class="nav-link" id="onedrive-analytic-nav" type="button" data-view="onedrive-metric-analytic" hidden>OneDrive Metric Analytic</button>
             <button class="nav-link" type="button" data-view="other">อื่นๆ</button>
           </div>
         </div>
@@ -416,7 +464,7 @@
           </div>
           <div class="check-row">
             <span class="check-icon" aria-hidden="true">2</span>
-            <div><p>Microsoft Graph</p><small>ขอสิทธิ์ delegated: User.Read</small></div>
+            <div><p>Microsoft Graph</p><small>User.Read สำหรับโปรไฟล์ และ Files.Read เมื่อผู้ใช้เรียกดู OneDrive</small></div>
           </div>
           <p class="notice" id="setup-message" role="status">กำลังตรวจสอบการตั้งค่า...</p>
         </div>
@@ -469,6 +517,77 @@
           <button class="test-button" id="send-mail" type="submit">ส่งอีเมล</button>
           <p id="mail-message" role="status" aria-live="polite"></p>
         </form>
+      </section>
+
+      <section class="workspace-view" id="my-onedrive-metric-view" aria-labelledby="my-onedrive-metric-title" hidden>
+        <p class="eyebrow">ทดสอบระบบ · MyOneDrive Metric</p>
+        <h1 class="content-title" id="my-onedrive-metric-title">พื้นที่ OneDrive ของฉัน</h1>
+        <p class="section-intro">อ่านโควตาของบัญชีที่ลงชื่อเข้าใช้จาก Microsoft Graph โดยตรง ข้อมูลจะแสดงเมื่อเรียกดูสำเร็จเท่านั้น</p>
+        <div class="metric-toolbar">
+          <button class="test-button" id="load-my-drive-metric" type="button">เรียกดูข้อมูลของฉัน</button>
+          <span id="my-drive-account" class="metric-meta"></span>
+        </div>
+        <div class="metric-cards" id="my-drive-metric-cards" hidden>
+          <article class="metric-card"><h2>พื้นที่ทั้งหมด</h2><p id="my-drive-total">-</p></article>
+          <article class="metric-card"><h2>ใช้งานแล้ว</h2><p id="my-drive-used">-</p></article>
+          <article class="metric-card"><h2>คงเหลือ</h2><p id="my-drive-remaining">-</p></article>
+          <article class="metric-card"><h2>รายการที่ลบ</h2><p id="my-drive-deleted">-</p></article>
+        </div>
+        <p class="metric-message" id="my-drive-metric-message" role="status" aria-live="polite">กดปุ่มเพื่ออ่านโควตาจาก Microsoft Graph</p>
+        <p class="metric-meta" id="my-drive-metric-meta"></p>
+        <section class="metric-chart" id="my-drive-quota-chart" aria-labelledby="my-drive-chart-title" hidden>
+          <div class="metric-chart-heading">
+            <h2 id="my-drive-chart-title">สัดส่วนการใช้พื้นที่</h2>
+            <div class="quota-headline"><span class="quota-total-label">พื้นที่ทั้งหมด</span><strong class="quota-total-value" id="my-drive-chart-total"></strong><p class="quota-percent" id="my-drive-chart-percent"></p></div>
+          </div>
+          <div class="quota-track" role="img" id="my-drive-quota-bar" aria-label="สัดส่วนพื้นที่ OneDrive"><span class="quota-used"></span><span class="quota-remaining"></span></div>
+          <div class="quota-legend">
+            <span><i aria-hidden="true"></i>ใช้งาน <strong id="my-drive-chart-used"></strong></span>
+            <span><i class="remaining-key" aria-hidden="true"></i>คงเหลือ <strong id="my-drive-chart-remaining"></strong></span>
+            <span><i class="deleted-key" aria-hidden="true"></i>รายการที่ลบจาก Graph <strong id="my-drive-chart-deleted"></strong></span>
+          </div>
+          <div class="quota-chart-footer">
+            <p class="quota-note">ค่า “รายการที่ลบ” แสดงแยกตามข้อมูลจาก Graph และไม่บวกซ้ำในสัดส่วนพื้นที่</p>
+            <a class="storage-metrics-link" id="my-drive-storage-link" target="_blank" rel="noopener noreferrer">เปิด Storage Metrics ในแท็บใหม่</a>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace-view" id="onedrive-metric-analytic-view" aria-labelledby="onedrive-metric-analytic-title" hidden>
+        <p class="eyebrow">ทดสอบระบบ · OneDrive Metric Analytic</p>
+        <h1 class="content-title" id="onedrive-metric-analytic-title">ตรวจสอบพื้นที่ OneDrive</h1>
+        <p class="section-intro">สำหรับผู้ดูแลระบบที่ได้รับอนุญาต ระบุ UPN หรืออีเมลของบัญชีเป้าหมายเพื่อดูข้อมูลโควตา</p>
+        <form class="mail-form metric-form" id="drive-analytic-form">
+          <label for="drive-analytic-account">UPN หรืออีเมลของบัญชีที่ต้องการตรวจสอบ
+            <input id="drive-analytic-account" name="account" type="text" inputmode="email" autocomplete="off" maxlength="254" placeholder="user@organization.ac.th" required>
+          </label>
+          <button class="test-button" id="load-drive-analytic" type="submit">ค้นหาข้อมูล</button>
+          <p class="metric-meta">การค้นหาจำกัดเฉพาะ UPN/อีเมลแบบตรงตัว ไม่ค้นด้วยชื่อแสดงผล</p>
+        </form>
+        <div class="metric-cards" id="drive-analytic-metric-cards" hidden>
+          <article class="metric-card"><h2>พื้นที่ทั้งหมด</h2><p id="analytic-drive-total">-</p></article>
+          <article class="metric-card"><h2>ใช้งานแล้ว</h2><p id="analytic-drive-used">-</p></article>
+          <article class="metric-card"><h2>คงเหลือ</h2><p id="analytic-drive-remaining">-</p></article>
+          <article class="metric-card"><h2>รายการที่ลบ</h2><p id="analytic-drive-deleted">-</p></article>
+        </div>
+        <p class="metric-message" id="drive-analytic-message" role="status" aria-live="polite">ต้องเป็นผู้ดูแลที่กำหนดไว้ในระบบจึงจะค้นหาบัญชีอื่นได้</p>
+        <p class="metric-meta" id="drive-analytic-meta"></p>
+        <section class="metric-chart" id="analytic-quota-chart" aria-labelledby="analytic-chart-title" hidden>
+          <div class="metric-chart-heading">
+            <h2 id="analytic-chart-title">สัดส่วนการใช้พื้นที่</h2>
+            <div class="quota-headline"><span class="quota-total-label">พื้นที่ทั้งหมด</span><strong class="quota-total-value" id="analytic-chart-total"></strong><p class="quota-percent" id="analytic-chart-percent"></p></div>
+          </div>
+          <div class="quota-track" role="img" id="analytic-quota-bar" aria-label="สัดส่วนพื้นที่ OneDrive"><span class="quota-used"></span><span class="quota-remaining"></span></div>
+          <div class="quota-legend">
+            <span><i aria-hidden="true"></i>ใช้งาน <strong id="analytic-chart-used"></strong></span>
+            <span><i class="remaining-key" aria-hidden="true"></i>คงเหลือ <strong id="analytic-chart-remaining"></strong></span>
+            <span><i class="deleted-key" aria-hidden="true"></i>รายการที่ลบจาก Graph <strong id="analytic-chart-deleted"></strong></span>
+          </div>
+          <div class="quota-chart-footer">
+            <p class="quota-note">ค่า “รายการที่ลบ” แสดงแยกตามข้อมูลจาก Graph และไม่บวกซ้ำในสัดส่วนพื้นที่</p>
+            <a class="storage-metrics-link" id="analytic-storage-link" target="_blank" rel="noopener noreferrer">เปิด Storage Metrics ในแท็บใหม่</a>
+          </div>
+        </section>
       </section>
 
       <section class="workspace-view" id="other-view" aria-labelledby="other-title" hidden>

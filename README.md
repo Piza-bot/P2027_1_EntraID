@@ -23,10 +23,13 @@ Open the URL printed by Vite, normally `http://localhost:5173/`.
 	- `https://netentra.citcoms.up.ac.th/redirect.html` for the production Nginx site.
 	- `https://piza-bot.github.io/P2027_1_EntraID/redirect.html` for GitHub Pages.
 3. Under **Expose an API**, use `api://<Application (client) ID>` as the Application ID URI and add a delegated scope named `access_as_user`.
-4. Under **API permissions**, add Microsoft Graph **Delegated** permission `User.Read` and your app's delegated `access_as_user` scope. Grant admin consent if required by your tenant.
+4. Under **API permissions**, add Microsoft Graph **Delegated** permissions `User.Read` and `Files.Read`, plus your app's delegated `access_as_user` scope. `Files.Read` is used by **MyOneDrive Metric** to read the signed-in user's drive quota and web URL. Grant admin consent if required by your tenant.
 5. Set `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, and `ENTRA_CLIENT_SECRET` in `.env`. The client ID and tenant ID must also match `src/authConfig.js`. The client secret is used only by Node.js; never put it in frontend code or `VITE_*` variables.
 6. Set `MAIL_FROM_ADDRESS=Piza@up.ac.th`.
 7. In Exchange Online, assign the Node API's service principal the `Application Mail.Send` role with the Management Scope that includes `Piza@up.ac.th`. Verify it with `Test-ServicePrincipalAuthorization` for that mailbox. Do not also grant this app an unscoped Microsoft Entra **Application** `Mail.Send` permission, because grants are additive and would defeat the intended scope.
+8. For **OneDrive Metric Analytic**, set the server-only `ONEDRIVE_ADMIN_UPNS` variable to a comma-separated allowlist of administrator UPNs. The menu is shown only when the signed-in user's UPN is in this allowlist; the backend also checks the allowlist on every lookup. The app-only Graph identity also needs tenant-approved permissions to look up users and read drive metadata/quota (typically `User.Read.All` and `Files.Read.All`, subject to Graph endpoint support). Review these broad permissions carefully and grant admin consent only after testing.
+
+The OneDrive pages show quota utilization and embed the account's SharePoint Storage Metrics page using the `webUrl` returned by Microsoft Graph. SharePoint may block embedding or require its own browser sign-in; the UI also provides a direct link to open Storage Metrics in a new tab. The app's Graph access token is never passed to the iframe.
 
 The browser app remains a public client and contains no secret. The secret belongs only to the Node API environment. The Node API checks the delegated `access_as_user` token, tenant, and client before it sends. Any signed-in user in the tenant who can access this app can send mail as `Piza@up.ac.th`; Exchange RBAC limits the mailbox the app can send as, not which signed-in users can call this API.
 

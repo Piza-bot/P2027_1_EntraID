@@ -1,6 +1,13 @@
 import express from "express";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from "jose";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { getStorageMetricsUrl } from "../src/storageMetricsUrl.js";
+
+const envFile = resolve(dirname(fileURLToPath(import.meta.url)), "../.env");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const {
   ENTRA_TENANT_ID: tenantId,
@@ -8,6 +15,12 @@ const {
   ENTRA_CLIENT_SECRET: clientSecret,
   MAIL_FROM_ADDRESS: mailFromAddress,
 } = process.env;
+const oneDriveAdmins = new Set(
+  (process.env.ONEDRIVE_ADMIN_UPNS || "")
+    .split(",")
+    .map((upn) => upn.trim().toLowerCase())
+    .filter(Boolean),
+);
 
 const requiredConfig = {
   ENTRA_TENANT_ID: tenantId,
@@ -47,7 +60,7 @@ async function authenticateUser(request, response, next) {
   const authorization = request.get("authorization") || "";
   const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) {
-    response.status(401).json({ error: "ต้องลงชื่อเข้าใช้ก่อนส่งอีเมล" });
+    response.status(401).json({ error: "ต้องลงชื่อเข้าใช้ก่อนเรียก API" });
     return;
   }
 
@@ -68,7 +81,7 @@ async function authenticateUser(request, response, next) {
     const callingClientId = payload.azp || payload.appid;
 
     if (payload.tid !== tenantId || callingClientId !== clientId || !scopes.includes("access_as_user")) {
-      response.status(403).json({ error: "ไม่มีสิทธิ์เรียก API ส่งอีเมล" });
+      response.status(403).json({ error: "ไม่มีสิทธิ์เรียก API นี้" });
       return;
     }
 
@@ -79,6 +92,97 @@ async function authenticateUser(request, response, next) {
     response.status(401).json({ error: "เซสชันไม่ถูกต้องหรือหมดอายุ กรุณาลงชื่อเข้าใช้อีกครั้ง" });
   }
 }
+
+async function getGraphJson(accessToken, url) {
+  const graphResponse = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!graphResponse.ok) {
+    const error = new Error(`Microsoft Graph returned HTTP ${graphResponse.status}`);
+    error.status = graphResponse.status;
+    throw error;
+  }
+  return graphResponse.json();
+}
+
+app.get("/api/drive-metrics/access", authenticateUser, (request, response) => {
+  response.json({ allowed: oneDriveAdmins.has(request.authenticatedUser) });
+});
+
+app.post("/api/drive-metrics", authenticateUser, async (request, response) => {
+  if (!oneDriveAdmins.has(request.authenticatedUser)) {
+    response.status(403).json({ error: "บัญชีนี้ไม่ได้รับอนุญาตให้ตรวจสอบ OneDrive ของผู้ใช้อื่น" });
+    return;
+  }
+
+  const account = typeof request.body?.account === "string" ? request.body.account.trim() : "";
+  if (account.length > 254 || !/^[^\s@]+@[^\s@]+$/.test(account)) {
+    response.status(400).json({ error: "กรุณาระบุ UPN หรืออีเมลให้ถูกต้อง" });
+    return;
+  }
+
+  try {
+    const token = await confidentialClient.acquireTokenByClientCredential({
+      scopes: ["https://graph.microsoft.com/.default"],
+    });
+    if (!token?.accessToken) throw new Error("Microsoft identity platform returned no access token");
+
+    const escapedAccount = account.replaceAll("'", "''");
+    const usersUrl = new URL("https://graph.microsoft.com/v1.0/users");
+    usersUrl.searchParams.set(
+      "$filter",
+      `userPrincipalName eq '${escapedAccount}' or mail eq '${escapedAccount}'`,
+    );
+    usersUrl.searchParams.set("$select", "id,displayName,userPrincipalName,mail");
+    const usersResult = await getGraphJson(token.accessToken, usersUrl);
+    const users = Array.isArray(usersResult.value) ? usersResult.value : [];
+
+    if (users.length === 0) {
+      response.status(404).json({ error: "ไม่พบบัญชีที่ตรงกับ UPN หรืออีเมลนี้" });
+      return;
+    }
+    if (users.length > 1) {
+      response.status(409).json({ error: "พบหลายบัญชีที่ตรงกัน กรุณาระบุ UPN ของบัญชีให้ชัดเจน" });
+      return;
+    }
+
+    const user = users[0];
+    const driveUrl = new URL(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(user.id)}/drive`,
+    );
+    driveUrl.searchParams.set("$select", "quota,driveType,webUrl");
+    const drive = await getGraphJson(token.accessToken, driveUrl);
+    if (!drive.quota) {
+      response.status(502).json({ error: "Microsoft Graph ไม่ส่งข้อมูลโควตาของ OneDrive กลับมา" });
+      return;
+    }
+    const storageMetricsUrl = getStorageMetricsUrl(drive.webUrl);
+
+    response.json({
+      user: {
+        displayName: user.displayName || null,
+        userPrincipalName: user.userPrincipalName || null,
+        mail: user.mail || null,
+      },
+      quota: drive.quota,
+      storageMetricsUrl,
+    });
+  } catch (error) {
+    const graphStatus = Number.isInteger(error.status) ? error.status : null;
+    console.error(`OneDrive metric lookup failed: ${graphStatus || error.code || error.name || "unknown error"}`);
+    if (graphStatus === 404) {
+      response.status(404).json({ error: "ไม่พบ OneDrive ของบัญชีนี้ หรือบัญชียังไม่มี OneDrive" });
+      return;
+    }
+    if (graphStatus === 403) {
+      response.status(502).json({
+        error: "Microsoft Graph ปฏิเสธการอ่านข้อมูล ตรวจสอบ Application permissions, Admin consent และการรองรับ endpoint ของ Tenant",
+      });
+      return;
+    }
+    response.status(502).json({ error: "อ่านข้อมูล OneDrive ไม่สำเร็จ ตรวจสอบการตั้งค่า Microsoft Graph และสิทธิ์ของแอป" });
+  }
+});
 
 app.post("/api/send-mail", authenticateUser, async (request, response) => {
   const { to, subject, message } = request.body || {};
@@ -131,6 +235,10 @@ app.post("/api/send-mail", authenticateUser, async (request, response) => {
     console.error("Mail send failed:", error.message);
     response.status(502).json({ error: "ส่งอีเมลไม่สำเร็จ ตรวจสอบการตั้งค่า Node API และ Exchange RBAC" });
   }
+});
+
+app.use("/api", (request, response) => {
+  response.status(404).json({ error: "ไม่พบ API endpoint ที่ร้องขอ" });
 });
 
 const port = Number(process.env.PORT || 3000);

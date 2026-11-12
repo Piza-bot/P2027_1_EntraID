@@ -9,11 +9,18 @@
 <body>
   <p>Completing sign-in...</p>
   <script type="module">
-    import { broadcastResponseToMainFrame } from "@azure/msal-browser/redirect-bridge";
+    import { PublicClientApplication } from "@azure/msal-browser";
+    import { msalConfig } from "./src/authConfig.js";
 
-    broadcastResponseToMainFrame().catch((error) => {
-      console.error("Error broadcasting authentication response:", error);
-    });
+    const msalInstance = new PublicClientApplication(msalConfig);
+    try {
+      await msalInstance.initialize();
+      await msalInstance.handleRedirectPromise();
+      window.location.replace(new URL(import.meta.env.BASE_URL, window.location.origin).href);
+    } catch (error) {
+      console.error("Authentication redirect failed:", error);
+      document.body.textContent = "ลงชื่อเข้าใช้ไม่สำเร็จ กรุณากลับไปหน้าแอปและลองอีกครั้ง";
+    }
   </script>
 </body>
 </html>
